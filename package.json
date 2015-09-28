@@ -1,0 +1,24 @@
+{
+  "name": "node-humix-sense",
+  "version": "1.0.0",
+  "description": "Foundation for Humix-Sense modules",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": " Jeffrey Liu, jeffffrey@gmail.com",
+  "license": "Apache 2.0",
+  "dependencies": {
+    "debug": "^2.2.0",
+    "events": "^1.0.2",
+    "nats": "^0.2.9",
+    "respawn": "^2.0.0",
+    "util": "^0.10.3"
+  },
+  "devDependencies": {
+    "chai": "^3.3.0"
+  }
+}
