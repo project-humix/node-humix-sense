@@ -1,5 +1,4 @@
 var HumixSense = require("../index.js")
-//    humix = new HumixSense(config);
 
 var nats = require('nats').connect();
 var assert = require('chai').assert
@@ -8,7 +7,7 @@ var hsm;
 
 before(function(){
 
-    console.log('before running test...');
+    console.log('starting test...');
     
     // setup fake controller
     nats.subscribe('humix.sense.mgmt.register', function(msg, replyto){
@@ -139,6 +138,6 @@ describe('module base', function(){
 
 after(function(){
 
-    console.log('after running test...');
+    console.log('test completed');
 })
 

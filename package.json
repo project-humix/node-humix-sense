@@ -1,24 +1,32 @@
 {
-  "name": "node-humix-sense",
-  "version": "1.0.0",
+  "name": "humix-sense",
+  "version": "1.0.1",
   "description": "Foundation for Humix-Sense modules",
   "main": "index.js",
   "directories": {
     "test": "test"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/project-humix/node-humix-sense.git"
+  },
   "scripts": {
-    "test": "node test/*.js"
+    "test": "mocha"
   },
   "author": " Jeffrey Liu, jeffffrey@gmail.com",
   "license": "Apache 2.0",
   "dependencies": {
     "bunyan": "^1.8.1",
     "events": "^1.0.2",
-    "nats": "^0.2.9",
+    "nats": "^0.6.4",
     "respawn": "^2.0.0",
     "util": "^0.10.3"
   },
   "devDependencies": {
-    "chai": "^3.3.0"
+    "chai": "^3.3.0",
+    "mocha": "^2.5.3"
+  },
+  "engines": {
+    "node": ">=4.2"
   }
 }

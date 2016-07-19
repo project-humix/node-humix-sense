@@ -1,8 +1,4 @@
-/*
-  TODO:
-  * support different nats port
 
-*/
 var nats = require('nats').connect();
 var util         = require("util");
 var EventEmitter = require("events").EventEmitter;
@@ -32,13 +28,12 @@ function HumixSenseModule(config){
 
         var command = config.commands[i];
         var topic = cmdPrefix + "." + command;
-        self.logger.debug("subscribing topic:"+ topic);
+        self.logger.debug("subscribing command topic:"+ topic);
 
         (function(topic,command){
 
             nats.subscribe(topic, function(data){
-                self.logger.debug('topic:'+topic);
-                self.logger.debug('emitting command:' + command);
+                self.logger.debug('emitting command topic:' + topic);
                 self.emit(command,data);
             });
         })(topic,command);
@@ -68,13 +63,13 @@ function HumixSenseModule(config){
         monitor.start();
 
         monitor.on('stdout', function(data){
-
             self.emit('stdout', data);
+            self.logger.info('process monitor:' + data);
         });
 
         monitor.on('stderr', function(data){
 
-            self.emit('stderr', data);
+            self.logger.error('process monitor:' + data);            
         });
 
         monitor.on('exit', function(code){
@@ -97,7 +92,7 @@ HumixSenseModule.prototype.event = function(name,value) {
     var eventPrefix = 'humix.sense.'+self.config.moduleName+".event";
 
     var topic = eventPrefix + "." + name;
-    logger.info("publish event with topic :" + topic);
+    logger.debug("publishing event topic :" + topic);
     if (value instanceof Object) {
       value = JSON.stringify(value);
     }
@@ -190,14 +185,23 @@ function HumixSense(conf) {
         self.emit('connection', self.module);
     });
 
+
+    nats.subscribe('humix.sense.mgmt.'+self.config.moduleName+'.start', function(request, replyTo) {
+
+        self.emit('start');
+          
+    });
+
+
     nats.subscribe('humix.sense.mgmt.'+self.config.moduleName+'.stop', function(request, replyTo) {
 
         self.emit('stop');
-        process.exit(1);
+        
+        // no hard stop here. Module should handle this gracefully
+        // process.exit(1);
     });
 
     // subscribe module health check status with PING / PONG
-
     nats.subscribe('humix.sense.mgmt.'+self.config.moduleName+'.ping', function(request, replyto){
         nats.publish(replyto, 'humix.sense.mgmt.'+self.config.moduleName+'.pong');
     })
