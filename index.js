@@ -6,46 +6,47 @@
 var nats = require('nats').connect();
 var util         = require("util");
 var EventEmitter = require("events").EventEmitter;
-
+var bunyan = require("bunyan");
+var log = bunyan.createLogger({name: 'SenseModule'}); // default console logger
 
 /*
  *    Definition of HumixSenseModule
  */
-
 function HumixSenseModule(config){
 
     var self = this;
     EventEmitter.call(this);
     self.config = config;
+    // Create child logger for sense module
+    self.logger = log.child({component: config.moduleName});
 
-    var debug = require('debug')('module:'+config.moduleName);
-    
-    debug('Creating HumixSenseModule');
- 
-    // Register Command Callback     
+    if (self.config.debug) {
+      self.logger.level('debug');
+    }
+    self.logger.debug('Creating HumixSenseModule');
+
+    // Register Command Callback
     var cmdPrefix = 'humix.sense.'+config.moduleName+".command";
 
     for ( var i in config.commands){
 
         var command = config.commands[i];
         var topic = cmdPrefix + "." + command;
-
-        debug("subscribing topic:"+ topic);
+        self.logger.debug("subscribing topic:"+ topic);
 
         (function(topic,command){
-            
+
             nats.subscribe(topic, function(data){
-                debug('topic:'+topic);
-                debug('emitting command:' + command);
+                self.logger.debug('topic:'+topic);
+                self.logger.debug('emitting command:' + command);
                 self.emit(command,data);
             });
         })(topic,command);
-        
     }
 
     // Child Process management
     // if child process is defined in the config file, start child process here
-    
+
     if(config.childProcess){
 
         var respawn = require('respawn');
@@ -55,40 +56,35 @@ function HumixSenseModule(config){
             maxRestarts : 0
         }
 
-
         var exec_commands = [
             config.childProcess.name,
             config.childProcess.params
         ];
 
-        
         var monitor = respawn(exec_commands, { maxRestarts : config.childProcess.restart });
-        
-        debug('launch child process: name:' + config.childProcess.name + ", param:" +config.childProcess.params + ", restart:" + config.childProcess.restart);
+
+        self.logger.debug('launch child process: name:' + config.childProcess.name + ", param:" +config.childProcess.params + ", restart:" + config.childProcess.restart);
 
         monitor.start();
-        
+
         monitor.on('stdout', function(data){
 
-            self.emit('stdout', data); 
+            self.emit('stdout', data);
         });
 
         monitor.on('stderr', function(data){
 
-            self.emit('stderr', data); 
+            self.emit('stderr', data);
         });
 
         monitor.on('exit', function(code){
 
             self.emit('childClose', code);
-            console.log('child process exited with code ' + code);
-  
+            self.logger.info('child process exited with code ' + code);
         });
-        
-    }
-    
 
-    
+    }
+
 }
 
 util.inherits(HumixSenseModule, EventEmitter);
@@ -96,13 +92,20 @@ util.inherits(HumixSenseModule, EventEmitter);
 HumixSenseModule.prototype.event = function(name,value) {
 
     var self = this;
-    
+    var logger = this.logger;
+
     var eventPrefix = 'humix.sense.'+self.config.moduleName+".event";
 
     var topic = eventPrefix + "." + name;
-
-    console.log("publish event with topic :" + topic);
+    logger.info("publish event with topic :" + topic);
+    if (value instanceof Object) {
+      value = JSON.stringify(value);
+    }
     nats.publish(topic, value);
+};
+
+HumixSenseModule.prototype.getLogger = function getLogger() {
+  return this.logger;
 };
 
 /*
@@ -113,48 +116,77 @@ HumixSenseModule.prototype.event = function(name,value) {
 /*
  *    Definition of HumixSense
  */
-
-
 function HumixSense(conf) {
 
-    var debug = require('debug')('modulebase');
-    debug('creating HumixSense communication');
+    log.info('creating HumixSense communication');
+
     var self = this;
 
     if (!(this instanceof HumixSense))
         return new HumixSense(conf);
 
-    
     self.module = null;;
     self.config = conf;
-    if(!self.config){
 
+    if(!self.config){
         // looking for default config
-        debug('looking for local config...');
+        log.info('looking for local config...');
         self.config = require('./config.js');
 
-        // if default config doesn't exist, abort. 
+        // if default config doesn't exist, abort.
         if(!self.config){
-
-            process.exit(1);
+          log.error('default config does not exist.');
+          process.exit(1);
         }
     }
 
-    debug("config:"+JSON.stringify(self.config));
-   
-    
-    EventEmitter.call(this);
+    var configValid = false;
+    if (self.config.log) {
+      var cfg = self.config.log;
 
+      var c = {name: 'SenseModule', streams: []};
+      if (cfg) {
+        cfg.forEach(function(element, index, array) {
+          if (element.type == 'file') {
+            var loglevel = element.level || 'info';
+            c.streams.push({path: element.path, level: loglevel});
+            configValid = true;
+          }
+        });
+        if (configValid) {
+          log.debug('logger config: ' + JSON.stringify(c));
+          log = bunyan.createLogger(c);
+        }
+      }
+    }
+
+    if(!configValid) {
+      log = bunyan.createLogger({
+        name : 'SenseModule',
+        streams : [{
+          path : self.config.moduleName + '.log'
+        }]
+      });
+    }
+
+    if (self.config.debug) {
+      log.level('debug');
+    }
+
+    log.debug("config: "+JSON.stringify(self.config));
+
+    EventEmitter.call(this);
 
     // register module to humix sense controller
 
     nats.request('humix.sense.mgmt.register', JSON.stringify(self.config),function(){
 
-        debug('Humix Sense received registration from ' + self.config.moduleName + ' module');
+        log.debug('Humix Sense received registration from ' + self.config.moduleName + ' module');
 
-        
         self.module = new HumixSenseModule(self.config);
-        debug('emit connection event');
+
+        log.debug('emit connection event');
+
         self.emit('connection', self.module);
     });
 
@@ -163,14 +195,13 @@ function HumixSense(conf) {
         self.emit('stop');
         process.exit(1);
     });
-    
+
     // subscribe module health check status with PING / PONG
-    
+
     nats.subscribe('humix.sense.mgmt.'+self.config.moduleName+'.ping', function(request, replyto){
         nats.publish(replyto, 'humix.sense.mgmt.'+self.config.moduleName+'.pong');
     })
 }
-
 
 util.inherits(HumixSense, EventEmitter);
 
