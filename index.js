@@ -42,10 +42,10 @@ function HumixSenseModule(config){
 
                         nats.publish(replyTo, result);
                     });
-                } else { 
+                } else {
 
                     self.emit(command, data);
-                }    
+                }
             });
         })(topic,command);
     }
@@ -80,7 +80,7 @@ function HumixSenseModule(config){
 
         monitor.on('stderr', function(data){
 
-            self.logger.error('process monitor:' + data);            
+            self.logger.error('process monitor:' + data);
         });
 
         monitor.on('exit', function(code){
@@ -146,33 +146,27 @@ function HumixSense(conf) {
         }
     }
 
-    var configValid = false;
+    var hasLogFile = false;
     if (self.config.log) {
       var cfg = self.config.log;
 
       var c = {name: 'SenseModule', streams: []};
       if (cfg) {
         cfg.forEach(function(element, index, array) {
-          if (element.type == 'file') {
+          if (element.file) {
             var loglevel = element.level || 'info';
-            c.streams.push({path: element.path, level: loglevel});
-            configValid = true;
+            log.info('creating log file: ' + element.file);
+            log.addStream({path: element.file, level: loglevel});
+            hasLogFile = true;
           }
         });
-        if (configValid) {
-          log.debug('logger config: ' + JSON.stringify(c));
-          log = bunyan.createLogger(c);
-        }
+
       }
     }
 
-    if(!configValid) {
-      log = bunyan.createLogger({
-        name : 'SenseModule',
-        streams : [{
-          path : self.config.moduleName + '.log'
-        }]
-      });
+    if(!hasLogFile) {
+      log.info('creating default log file: ' + self.config.moduleName + '.log');
+      log.addStream({path : self.config.moduleName + '.log'});
     }
 
     if (self.config.debug) {
@@ -200,14 +194,14 @@ function HumixSense(conf) {
     nats.subscribe('humix.sense.mgmt.'+self.config.moduleName+'.start', function(request, replyTo) {
 
         self.emit('start');
-          
+
     });
 
 
     nats.subscribe('humix.sense.mgmt.'+self.config.moduleName+'.stop', function(request, replyTo) {
 
         self.emit('stop');
-        
+
         // no hard stop here. Module should handle this gracefully
         // process.exit(1);
     });
