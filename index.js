@@ -32,9 +32,20 @@ function HumixSenseModule(config){
 
         (function(topic,command){
 
-            nats.subscribe(topic, function(data){
+            nats.subscribe(topic, function(data, replyTo){
                 self.logger.debug('emitting command topic:' + topic);
-                self.emit(command,data);
+                var parsedData = JSON.parse(data);
+                if (parsedData.syncCmdId) {
+
+                    delete parsedData.syncCmdId;
+                    self.emit(command, JSON.stringify(parsedData), function (result) {
+
+                        nats.publish(replyTo, result);
+                    });
+                } else { 
+
+                    self.emit(command, data);
+                }    
             });
         })(topic,command);
     }
