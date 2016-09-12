@@ -134,7 +134,10 @@ function HumixSenseModule(config) {
 }
 
 util.inherits(HumixSenseModule, EventEmitter);
-HumixSenseModule.prototype.moduleEventlistener= moduleEventEmitter;
+HumixSenseModule.prototype.onModuleEvent=function(event ,cb) {
+    
+    moduleEventEmitter.addListener(event,cb);
+} 
 HumixSenseModule.prototype.event = function (name, value) {
 
     var self = this;
