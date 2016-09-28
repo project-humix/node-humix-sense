@@ -11,13 +11,6 @@ var moduleEventEmitter = new EventEmitter;
 function HumixSenseModule(config) {
 
 
-    if(config.natsIp) {
-        nats = require ('nats').connect('nats://'+config.natsIp+':4222');
-        
-    }
-    else {
-        nats= require('nats').connect();
-    }
     var self = this;
     EventEmitter.call(this);
     self.config = config;
@@ -212,6 +205,14 @@ function HumixSense(conf) {
 
     if (!(this instanceof HumixSense)) {
         return new HumixSense(conf);
+    }
+
+    if(conf.natsIp) {
+        nats = require ('nats').connect('nats://'+conf.natsIp+':4222');
+        console.log('!!!!!!!  '+conf.natsIp);
+    }
+    else {
+        nats= require('nats').connect();
     }
     self.module = null;;
     self.config = conf;
