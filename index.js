@@ -1,5 +1,5 @@
 
-var nats = require('nats').connect();
+var nats ;
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 var bunyan = require('bunyan');
@@ -9,6 +9,15 @@ var moduleEventEmitter = new EventEmitter;
  *    Definition of HumixSenseModule
  */
 function HumixSenseModule(config) {
+
+
+    if(config.natsIp) {
+        nats = require ('nats').connect('nats://'+config.natsIp+':4222');
+        
+    }
+    else {
+        nats= require('nats').connect();
+    }
     var self = this;
     EventEmitter.call(this);
     self.config = config;
