@@ -209,7 +209,7 @@ function HumixSense(conf) {
 
     if(conf.natsIp) {
         nats = require ('nats').connect('nats://'+conf.natsIp+':4222');
-        console.log('!!!!!!!  '+conf.natsIp);
+        
     }
     else {
         nats= require('nats').connect();
