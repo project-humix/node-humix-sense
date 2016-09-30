@@ -1,5 +1,5 @@
 
-var nats = require('nats').connect();
+var nats ;
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 var bunyan = require('bunyan');
@@ -9,6 +9,8 @@ var moduleEventEmitter = new EventEmitter;
  *    Definition of HumixSenseModule
  */
 function HumixSenseModule(config) {
+
+
     var self = this;
     EventEmitter.call(this);
     self.config = config;
@@ -204,6 +206,9 @@ function HumixSense(conf) {
     if (!(this instanceof HumixSense)) {
         return new HumixSense(conf);
     }
+    var natsIP=conf.natsIP||'localhost';
+    var natsPort=conf.natsPort||'4222';
+    nats = require ('nats').connect('nats://'+natsIP+':'+natsPort);
     self.module = null;;
     self.config = conf;
 
