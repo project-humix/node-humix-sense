@@ -206,14 +206,9 @@ function HumixSense(conf) {
     if (!(this instanceof HumixSense)) {
         return new HumixSense(conf);
     }
-
-    if(conf.natsIp) {
-        nats = require ('nats').connect('nats://'+conf.natsIp+':4222');
-        
-    }
-    else {
-        nats= require('nats').connect();
-    }
+    var natsIP=conf.natsIP||'localhost';
+    var natsPort=conf.natsPort||'4222';
+    nats = require ('nats').connect('nats://'+natsIP+':'+natsPort);
     self.module = null;;
     self.config = conf;
 
