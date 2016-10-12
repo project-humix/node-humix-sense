@@ -4,7 +4,7 @@ var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 var bunyan = require('bunyan');
 var log = bunyan.createLogger({ name: 'SenseModule' }); // default console logger
-var moduleEventEmitter = new EventEmitter;
+var localEventEmitter = new EventEmitter;
 /*
  *    Definition of HumixSenseModule
  */
@@ -59,12 +59,12 @@ function HumixSenseModule(config) {
     }
 
    
-    var mevnPrefix = 'humix.sense.moduleEvent.';
-    for (var i in config.moduleEvents) {
-        var moduleEvent = config.moduleEvents[i];
-        var topic = mevnPrefix  + moduleEvent;
+    var localEventPrefix = 'humix.sense.localEvent.';
+    for (var i in config.localEvents) {
+        var localEvent = config.localEvents[i];
+        var topic = mevnPrefix  + localEvent;
      
-        (function (topic, moduleEvent) {
+        (function (topic, localEvent) {
 
             nats.subscribe(topic, function (data, replyTo) {
                 self.logger.debug('emitting command topic:' + topic);
@@ -77,20 +77,12 @@ function HumixSenseModule(config) {
                         parsedData=data;
                     }
                 }
-                if (parsedData instanceof Object && parsedData.syncCmdId) {
-
-                    delete parsedData.syncCmdId;
-                    self.emit(moduleEvent, JSON.stringify(parsedData), function (result) {
-
-                        nats.publish(replyTo, result);
-                    });
-                }
-                else {
+                
                     
-                    moduleEventEmitter.emit(moduleEvent, data);
-                }
+                    localEventEmitter.emit(localEvent, data);
+                
             });
-        })(topic, moduleEvent);
+        })(topic, localEvent);
     }
     // Child Process management
     // if child process is defined in the config file, start child process here
@@ -136,9 +128,9 @@ function HumixSenseModule(config) {
 }
 
 util.inherits(HumixSenseModule, EventEmitter);
-HumixSenseModule.prototype.onModuleEvent=function(event ,cb) {
+HumixSenseModule.prototype.onLocalEvent=function(event ,cb) {
     
-    moduleEventEmitter.addListener(event,cb);
+    localEventEmitter.addListener(event,cb);
 } 
 HumixSenseModule.prototype.event = function (name, value) {
 
@@ -171,11 +163,11 @@ HumixSenseModule.prototype.moduleCommand = function (moduleName, command, data) 
     nats.publish(topic, data);
 };
 
-HumixSenseModule.prototype.moduleEvent = function (event, data) {
+HumixSenseModule.prototype.localEventBroadcast = function (event, data) {
 
     var self = this;
     var logger = this.logger;
-    var topic = 'humix.sense.moduleEvent.' + event;
+    var topic = 'humix.sense.localEvent.' + event;
 
     logger.debug('module [' + self.config.moduleName + '] broadcast a module-event [' + event + ']');
     if (data instanceof Object) {
