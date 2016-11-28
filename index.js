@@ -2,9 +2,9 @@
 var nats ;
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
-var bunyan = require('bunyan');
-var log = bunyan.createLogger({ name: 'SenseModule' }); // default console logger
+var log = require('humix-logger').createLogger('SenseModule', {filename:'humix-sense-module.log'});
 var localEventEmitter = new EventEmitter;
+
 /*
  *    Definition of HumixSenseModule
  */
@@ -58,12 +58,12 @@ function HumixSenseModule(config) {
         })(topic, command);
     }
 
-   
+
     var localEventPrefix = 'humix.sense.localEvent.';
     for (var i in config.localEvents) {
         var localEvent = config.localEvents[i];
-        var topic = mevnPrefix  + localEvent;
-     
+        var topic = localEventPrefix  + localEvent;
+
         (function (topic, localEvent) {
 
             nats.subscribe(topic, function (data, replyTo) {
@@ -77,10 +77,10 @@ function HumixSenseModule(config) {
                         parsedData=data;
                     }
                 }
-                
-                    
+
+
                     localEventEmitter.emit(localEvent, data);
-                
+
             });
         })(topic, localEvent);
     }
@@ -129,9 +129,9 @@ function HumixSenseModule(config) {
 
 util.inherits(HumixSenseModule, EventEmitter);
 HumixSenseModule.prototype.onLocalEvent=function(event ,cb) {
-    
+
     localEventEmitter.addListener(event,cb);
-} 
+}
 HumixSenseModule.prototype.event = function (name, value) {
 
     var self = this;
