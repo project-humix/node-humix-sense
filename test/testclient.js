@@ -1,3 +1,5 @@
+// NOTE : You will need to start a running humix-sense instance before invoking this test
+
 var HumixSense = require("../index.js")
 
 var nats = require('nats').connect();

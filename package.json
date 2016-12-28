@@ -16,7 +16,6 @@
   "author": " Jeffrey Liu, jeffffrey@gmail.com",
   "license": "Apache 2.0",
   "dependencies": {
-    "bunyan": "^1.8.1",
     "events": "^1.0.2",
     "humix-logger": "^1.0.4",
     "nats": "^0.6.4",
