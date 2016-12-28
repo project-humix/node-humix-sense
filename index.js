@@ -2,25 +2,21 @@
 var nats ;
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
-var log = require('humix-logger').createLogger('SenseModule', {filename:'humix-sense-module.log'});
+var humixLogger = require('humix-logger');
 var localEventEmitter = new EventEmitter;
 
+var log;
 /*
  *    Definition of HumixSenseModule
  */
-function HumixSenseModule(config) {
+function HumixSenseModule(config, logger) {
 
 
     var self = this;
     EventEmitter.call(this);
     self.config = config;
-    // Create child logger for sense module
-    self.logger = log.child({ component: config.moduleName });
+    self.logger = logger;
 
-    if (self.config.debug) {
-        self.logger.level('debug');
-    }
-    self.logger.debug('Creating HumixSenseModule');
     // Register Command Callback
     var cmdPrefix = 'humix.sense.' + config.moduleName + '.command';
 
@@ -67,19 +63,19 @@ function HumixSenseModule(config) {
         (function (topic, localEvent) {
 
             nats.subscribe(topic, function (data, replyTo) {
-                self.logger.debug('emitting command topic:' + topic);
+                self.logger.info('emitting command topic:' + topic);
                 var parsedData ;
-                  if (data) {
+                  if (data && typeof data === 'object') {
                     try {
-                        parsedData = JSON.parse(data);
+                        data = JSON.parse(data);
                     }
                     catch (e) {
-                        parsedData=data;
+                       self.logger.error('failed to parse data');
                     }
                 }
 
 
-                    localEventEmitter.emit(localEvent, data);
+                localEventEmitter.emit(localEvent, data);
 
             });
         })(topic, localEvent);
@@ -189,61 +185,47 @@ HumixSenseModule.prototype.getLogger = function getLogger() {
 /*
  *    Definition of HumixSense
  */
+
 function HumixSense(conf) {
 
-    log.info('creating HumixSense communication');
-
-    var self = this;
 
     if (!(this instanceof HumixSense)) {
         return new HumixSense(conf);
     }
-    var natsIP=conf.natsIP||'localhost';
-    var natsPort=conf.natsPort||'4222';
-    nats = require ('nats').connect('nats://'+natsIP+':'+natsPort);
-    self.module = null;;
-    self.config = conf;
 
-    if (!self.config) {
+    if (!conf) {
         // looking for default config
-        log.info('looking for local config...');
-        self.config = require('./config.js');
+        conf = require('./config.js');
 
         // if default config doesn't exist, abort.
-        if (!self.config) {
-            log.error('default config does not exist.');
+        if (!conf) {
+            console.error('default config does not exist.');
             process.exit(1);
         }
     }
 
-    var hasLogFile = false;
-    if (self.config.log) {
-        var cfg = self.config.log;
+    var self = this;
+    self.config = conf;
 
-        var c = { name: 'SenseModule', streams: [] };
-        if (cfg) {
-            cfg.forEach(function (element, index, array) {
-                if (element.file) {
-                    var loglevel = element.level || 'info';
-                    log.info('creating log file: ' + element.file);
-                    log.addStream({ path: element.file, level: loglevel });
-                    hasLogFile = true;
-                }
-            });
 
-        }
-    }
+    // setup logs
 
-    if (!hasLogFile) {
-        log.info('creating default log file: ' + self.config.moduleName + '.log');
-        log.addStream({ path: self.config.moduleName + '.log' });
-    }
+    log = humixLogger.createLogger(conf.moduleName, {filename: conf.log.filename,
+                                                     fileLevel: conf.log.fileLevel,
+                                                     consoleLevel: conf.log.consoleLevel});
+    console.log("creating logger, consolelevel:"+conf.log.consoleLevel);
+    log.info('creating HumixSense communication');
 
-    if (self.config.debug) {
-        log.level('debug');
-    }
 
-    log.debug('config: ' + JSON.stringify(self.config));
+    var natsIP = conf.natsIP || 'localhost';
+    var natsPort = conf.natsPort || '4222';
+    nats = require ('nats').connect('nats://'+natsIP+':'+natsPort);
+
+    self.module = null;;
+
+
+
+    log.info('using config: ' + JSON.stringify(self.config));
 
     EventEmitter.call(this);
 
@@ -251,11 +233,9 @@ function HumixSense(conf) {
 
     nats.request('humix.sense.mgmt.register', JSON.stringify(self.config), function () {
 
-        log.debug('Humix Sense received registration from ' + self.config.moduleName + ' module');
+        log.info('module registration completed');
 
-        self.module = new HumixSenseModule(self.config);
-
-        log.debug('emit connection event');
+        self.module = new HumixSenseModule(self.config, log);
 
         self.emit('connection', self.module);
     });
@@ -263,12 +243,16 @@ function HumixSense(conf) {
 
     nats.subscribe('humix.sense.mgmt.' + self.config.moduleName + '.start', function (request, replyTo) {
 
+        log.debug('received start event');
+
         self.emit('start');
 
     });
 
 
     nats.subscribe('humix.sense.mgmt.' + self.config.moduleName + '.stop', function (request, replyTo) {
+
+        log.debug('received stop event');
 
         self.emit('stop');
 
