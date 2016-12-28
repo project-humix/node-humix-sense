@@ -14,7 +14,7 @@
     "test": "mocha"
   },
   "author": " Jeffrey Liu, jeffffrey@gmail.com",
-  "license": "Apache 2.0",
+  "license": "Apache-2.0",
   "dependencies": {
     "events": "^1.0.2",
     "humix-logger": "^1.0.4",
@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "chai": "^3.3.0",
-    "mocha": "^2.5.3"
+    "mocha": "^3.2.0"
   },
   "engines": {
     "node": ">=4.2"
