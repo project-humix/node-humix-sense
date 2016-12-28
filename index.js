@@ -3,9 +3,15 @@ var nats ;
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 var humixLogger = require('humix-logger');
+var path = require('path');
+var os = require('os');
+var fs = require('fs');
+
 var localEventEmitter = new EventEmitter;
 
+var defaultConfig;
 var log;
+
 /*
  *    Definition of HumixSenseModule
  */
@@ -16,6 +22,7 @@ function HumixSenseModule(config, logger) {
     EventEmitter.call(this);
     self.config = config;
     self.logger = logger;
+    self.name = config.moduleName;
 
     // Register Command Callback
     var cmdPrefix = 'humix.sense.' + config.moduleName + '.command';
@@ -176,6 +183,23 @@ HumixSenseModule.prototype.getLogger = function getLogger() {
     return this.logger;
 };
 
+HumixSenseModule.prototype.getDefaultConfig = function () {
+
+    var defaultConfigPath = path.resolve(os.homedir(), '.humix/config.js');
+
+    if(fs.existsSync(defaultConfigPath)){
+
+        defaultConfigFile = require(defaultConfigPath);
+
+        if(defaultConfigFile && defaultConfigFile[this.name]){
+
+            defaultConfig = defaultConfigFile[this.name];
+        }
+    }
+
+    return defaultConfig;
+
+}
 
 /*
  *    End fo HumixSenseModule Definition
