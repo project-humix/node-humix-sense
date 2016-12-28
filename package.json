@@ -1,6 +1,6 @@
 {
   "name": "humix-sense",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Foundation for Humix-Sense modules",
   "main": "index.js",
   "directories": {
@@ -14,10 +14,12 @@
     "test": "mocha"
   },
   "author": " Jeffrey Liu <jeffffrey@gmail.com>",
-  "contributors": [{
-    "name": "Norman Kung",
-    "email": "as93717913@hotmail.com"
-  }, {
+  "contributors": [
+    {
+      "name": "Norman Kung",
+      "email": "as93717913@hotmail.com"
+    },
+    {
       "name": "Prinz Hung",
       "email": "prinzh@gmail.com"
     }
