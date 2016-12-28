@@ -18,6 +18,7 @@
   "dependencies": {
     "bunyan": "^1.8.1",
     "events": "^1.0.2",
+    "humix-logger": "^1.0.4",
     "nats": "^0.6.4",
     "respawn": "^2.0.0",
     "util": "^0.10.3"
