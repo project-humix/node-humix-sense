@@ -13,7 +13,15 @@
   "scripts": {
     "test": "mocha"
   },
-  "author": " Jeffrey Liu, jeffffrey@gmail.com",
+  "author": " Jeffrey Liu <jeffffrey@gmail.com>",
+  "contributors": [{
+    "name": "Norman Kung",
+    "email": "as93717913@hotmail.com"
+  }, {
+      "name": "Prinz Hung",
+      "email": "prinzh@gmail.com"
+    }
+  ],
   "license": "Apache-2.0",
   "dependencies": {
     "events": "^1.0.2",
